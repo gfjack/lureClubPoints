@@ -15,11 +15,9 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.ArrayList;
 
 /**
- * Spring Security配置类（最终修复版 - 修复Java版本兼容性）
+ * Spring Security配置类（Spring Security 6.1兼容版本）
  *
  * @author system
  * @date 2025-06-19
@@ -47,12 +45,13 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .headers(headers -> headers
-                        .frameOptions().deny()
-                        .contentTypeOptions().and()
+                        .frameOptions(frameOptions -> frameOptions.deny())
+                        .contentTypeOptions(contentTypeOptions -> {})  // 修改：移除多余的.and()
                         .httpStrictTransportSecurity(hstsConfig -> hstsConfig
                                 .maxAgeInSeconds(31536000)
-                                .includeSubdomains(true))
-                        .referrerPolicy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
+                                .includeSubDomains(true))
+                        .referrerPolicy(referrerPolicy -> referrerPolicy
+                                .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
                 )
 
                 .authorizeHttpRequests(authz -> authz
@@ -124,24 +123,23 @@ public class SecurityConfig {
     }
 
     /**
-     * CORS配置（修复：Java 17兼容性）
+     * CORS配置（Spring Security 6.1兼容版本）
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 修复：使用Java 17兼容的方式处理List
+        // 处理允许的源地址
         if (allowedOrigins != null && !allowedOrigins.trim().isEmpty()) {
-            List<String> origins = Arrays.asList(allowedOrigins.split(","));
-            List<String> cleanOrigins = new ArrayList<>();
-            for (String origin : origins) {
-                String trimmed = origin.trim();
-                if (!trimmed.isEmpty()) {
-                    cleanOrigins.add(trimmed);
+            String[] originArray = allowedOrigins.split(",");
+            for (String origin : originArray) {
+                String trimmedOrigin = origin.trim();
+                if (!trimmedOrigin.isEmpty()) {
+                    configuration.addAllowedOrigin(trimmedOrigin);
                 }
             }
-            configuration.setAllowedOrigins(cleanOrigins);
         } else {
+            // 默认允许的源地址
             configuration.setAllowedOrigins(Arrays.asList(
                     "http://localhost:3000",
                     "http://localhost:8080",
@@ -150,10 +148,12 @@ public class SecurityConfig {
             ));
         }
 
+        // 允许的HTTP方法
         configuration.setAllowedMethods(Arrays.asList(
                 "GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"
         ));
 
+        // 允许的请求头
         configuration.setAllowedHeaders(Arrays.asList(
                 "Authorization",
                 "Content-Type",
@@ -164,13 +164,17 @@ public class SecurityConfig {
                 "Access-Control-Request-Headers"
         ));
 
+        // 暴露的响应头
         configuration.setExposedHeaders(Arrays.asList(
                 "Access-Control-Allow-Origin",
                 "Access-Control-Allow-Credentials",
                 "Authorization"
         ));
 
+        // 允许携带凭证
         configuration.setAllowCredentials(true);
+
+        // 预检请求的有效期
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
