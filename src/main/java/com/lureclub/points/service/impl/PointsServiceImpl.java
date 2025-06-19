@@ -284,22 +284,23 @@ public class PointsServiceImpl implements PointsService {
         }
     }
 
-// 在PointsServiceImpl中修复方法调用
-
     /**
-     * 计算用户有效积分
+     * 【修复】计算用户有效积分
      * 有效积分 = 历史所有获得积分 - 历史所有抵扣积分 - 当日积分
      */
     private Integer calculateEffectivePoints(Long userId) {
         LocalDate today = LocalDate.now();
 
-        // 修改：使用正确的方法名
-        List<PointsHistory> histories = pointsHistoryRepository.findByUserIdAndDateRangeOptional(
-                userId, null, today.minusDays(1)
-        );
+        // 【修复】使用现有的repository方法，然后手动过滤
+        List<PointsHistory> allHistories = pointsHistoryRepository.findByUserIdOrderByOperationDateDescCreateTimeDesc(userId);
+
+        // 过滤出今天之前的记录
+        List<PointsHistory> historiesBeforeToday = allHistories.stream()
+                .filter(history -> history.getOperationDate().isBefore(today))
+                .collect(Collectors.toList());
 
         int effectivePoints = 0;
-        for (PointsHistory history : histories) {
+        for (PointsHistory history : historiesBeforeToday) {
             if (history.getPointsType() == PointsType.EARNED) {
                 effectivePoints += history.getPoints();
             } else if (history.getPointsType() == PointsType.DEDUCTED) {

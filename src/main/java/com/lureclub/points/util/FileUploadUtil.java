@@ -49,8 +49,8 @@ public class FileUploadUtil {
         // 验证文件
         validateImageFile(file);
 
-        // 创建目录
-        String fullPath = uploadPath + prizeImagesPath;
+        // 【修复】正确拼接路径，避免双斜杠问题
+        String fullPath = normalizeUploadPath(uploadPath, prizeImagesPath);
         createDirectoryIfNotExists(fullPath);
 
         // 生成文件名
@@ -61,12 +61,46 @@ public class FileUploadUtil {
             Path filePath = Paths.get(fullPath, fileName);
             Files.copy(file.getInputStream(), filePath);
 
-            // 返回访问URL
-            return prizeImagesPath + fileName;
+            // 【修复】返回正确的访问URL
+            return normalizeUrlPath(prizeImagesPath, fileName);
 
         } catch (IOException e) {
             throw new BusinessException("文件上传失败: " + e.getMessage());
         }
+    }
+
+    /**
+     * 【新增】规范化上传路径拼接
+     */
+    private String normalizeUploadPath(String basePath, String subPath) {
+        // 确保基础路径以/结尾
+        if (!basePath.endsWith("/")) {
+            basePath += "/";
+        }
+
+        // 确保子路径不以/开头
+        if (subPath.startsWith("/")) {
+            subPath = subPath.substring(1);
+        }
+
+        return basePath + subPath;
+    }
+
+    /**
+     * 【新增】规范化URL路径拼接
+     */
+    private String normalizeUrlPath(String basePath, String fileName) {
+        // 确保路径以/开头
+        if (!basePath.startsWith("/")) {
+            basePath = "/" + basePath;
+        }
+
+        // 确保路径以/结尾
+        if (!basePath.endsWith("/")) {
+            basePath += "/";
+        }
+
+        return basePath + fileName;
     }
 
     /**
@@ -161,7 +195,8 @@ public class FileUploadUtil {
         }
 
         try {
-            String fullPath = uploadPath + fileUrl;
+            // 【修复】正确构建完整文件路径
+            String fullPath = normalizeUploadPath(uploadPath, fileUrl);
             Path filePath = Paths.get(fullPath);
             return Files.deleteIfExists(filePath);
         } catch (IOException e) {

@@ -66,21 +66,4 @@ public interface PointsHistoryRepository extends JpaRepository<PointsHistory, Lo
     @Query("SELECT ph FROM PointsHistory ph WHERE ph.operationDate BETWEEN :startDate AND :endDate ORDER BY ph.userId, ph.operationDate DESC")
     List<PointsHistory> findAllByDateRange(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
-    /**
-     * 根据用户ID和日期范围查找积分历史（支持开放式查询）
-     * 注意：这个方法替代了原来重复定义的方法
-     *
-     * @param userId 用户ID
-     * @param startDate 开始日期（可为null）
-     * @param endDate 结束日期（可为null）
-     * @return 积分历史列表
-     */
-    @Query("SELECT ph FROM PointsHistory ph WHERE ph.userId = :userId " +
-            "AND (:startDate IS NULL OR ph.operationDate >= :startDate) " +
-            "AND (:endDate IS NULL OR ph.operationDate <= :endDate) " +
-            "ORDER BY ph.operationDate DESC")
-    List<PointsHistory> findByUserIdAndDateRangeOptional(@Param("userId") Long userId,
-                                                         @Param("startDate") LocalDate startDate,
-                                                         @Param("endDate") LocalDate endDate);
-
 }

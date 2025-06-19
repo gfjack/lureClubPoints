@@ -122,7 +122,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         // 保存用户
         user = userRepository.save(user);
 
-        // 初始化用户积分
+        // 【修复】初始化用户积分
         pointsService.initUserPoints(user.getId());
 
         return userConverter.toUserVo(user);

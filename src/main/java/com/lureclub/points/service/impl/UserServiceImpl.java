@@ -8,6 +8,7 @@ import com.lureclub.points.entity.user.vo.response.UserVo;
 import com.lureclub.points.exception.BusinessException;
 import com.lureclub.points.repository.UserRepository;
 import com.lureclub.points.service.UserService;
+import com.lureclub.points.service.PointsService;
 import com.lureclub.points.util.JwtUtil;
 import com.lureclub.points.util.PasswordUtil;
 import com.lureclub.points.util.ValidationUtil;
@@ -15,6 +16,7 @@ import com.lureclub.points.entity.user.UserConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 用户服务实现类
@@ -39,6 +41,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private ValidationUtil validationUtil;
+
+    @Autowired
+    private PointsService pointsService;
 
     /**
      * 用户登录实现
@@ -70,6 +75,7 @@ public class UserServiceImpl implements UserService {
      * 用户注册实现
      */
     @Override
+    @Transactional
     public UserVo register(UserRegisterVo registerVo) {
         // 验证确认密码
         if (!registerVo.getPassword().equals(registerVo.getConfirmPassword())) {
@@ -109,6 +115,9 @@ public class UserServiceImpl implements UserService {
 
         // 保存用户
         user = userRepository.save(user);
+
+        // 【修复】初始化用户积分记录
+        pointsService.initUserPoints(user.getId());
 
         return userConverter.toUserVo(user);
     }
