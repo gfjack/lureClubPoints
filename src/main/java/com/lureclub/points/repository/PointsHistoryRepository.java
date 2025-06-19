@@ -11,7 +11,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * 积分历史数据访问接口
+ * 积分历史数据访问接口（完整修复版）
  *
  * @author system
  * @date 2025-06-19
@@ -21,61 +21,79 @@ public interface PointsHistoryRepository extends JpaRepository<PointsHistory, Lo
 
     /**
      * 根据用户ID查找积分历史（按日期倒序）
-     *
-     * @param userId 用户ID
-     * @return 积分历史列表
      */
     @Query("SELECT ph FROM PointsHistory ph WHERE ph.userId = :userId ORDER BY ph.operationDate DESC, ph.createTime DESC")
     List<PointsHistory> findByUserIdOrderByOperationDateDescCreateTimeDesc(@Param("userId") Long userId);
 
     /**
      * 根据用户ID和积分类型查找积分历史
-     *
-     * @param userId 用户ID
-     * @param pointsType 积分类型
-     * @return 积分历史列表
      */
     List<PointsHistory> findByUserIdAndPointsTypeOrderByOperationDateDesc(Long userId, PointsType pointsType);
 
     /**
      * 计算用户总积分（所有获得积分的总和）
-     *
-     * @param userId 用户ID
-     * @return 总积分
      */
     @Query("SELECT COALESCE(SUM(ph.points), 0) FROM PointsHistory ph WHERE ph.userId = :userId AND ph.points > 0")
     Integer calculateTotalPoints(@Param("userId") Long userId);
 
     /**
-     * 修复：计算用户有效积分（获得积分 - 抵扣积分，排除当日积分）
-     * 由于JPA的限制，这个方法在Service层手动实现
-     *
-     * @param userId 用户ID
-     * @param today 今天日期
-     * @return 有效积分（此方法不再使用，保留接口兼容性）
+     * 计算用户总抵扣积分
      */
-    @Deprecated
-    @Query("SELECT COALESCE(SUM(ph.points), 0) FROM PointsHistory ph WHERE ph.userId = :userId AND ph.operationDate < :today")
-    Integer calculateEffectivePoints(@Param("userId") Long userId, @Param("today") LocalDate today);
+    @Query("SELECT COALESCE(SUM(ABS(ph.points)), 0) FROM PointsHistory ph WHERE ph.userId = :userId AND ph.points < 0")
+    Integer calculateTotalDeductedPoints(@Param("userId") Long userId);
+
+    /**
+     * 获取用户最新的积分历史记录
+     */
+    @Query("SELECT ph FROM PointsHistory ph WHERE ph.userId = :userId ORDER BY ph.operationDate DESC, ph.createTime DESC LIMIT 1")
+    PointsHistory findLatestByUserId(@Param("userId") Long userId);
 
     /**
      * 获取指定日期范围内所有用户的积分历史
-     *
-     * @param startDate 开始日期
-     * @param endDate 结束日期
-     * @return 积分历史列表
      */
     @Query("SELECT ph FROM PointsHistory ph WHERE ph.operationDate BETWEEN :startDate AND :endDate ORDER BY ph.userId, ph.operationDate DESC")
     List<PointsHistory> findAllByDateRange(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     /**
-     * 新增：获取用户指定日期之前的所有积分历史（用于有效积分计算）
-     *
-     * @param userId 用户ID
-     * @param beforeDate 指定日期
-     * @return 积分历史列表
+     * 获取指定日期范围内指定类型的积分历史
+     */
+    @Query("SELECT ph FROM PointsHistory ph WHERE ph.operationDate BETWEEN :startDate AND :endDate " +
+            "AND ph.pointsType = :pointsType ORDER BY ph.operationDate DESC")
+    List<PointsHistory> findByDateRangeAndType(@Param("startDate") LocalDate startDate,
+                                               @Param("endDate") LocalDate endDate,
+                                               @Param("pointsType") PointsType pointsType);
+
+    /**
+     * 获取当日积分排行榜数据
+     */
+    @Query("SELECT ph.userId, COALESCE(SUM(ph.points), 0) as dailyPoints FROM PointsHistory ph " +
+            "WHERE ph.operationDate = :date AND ph.pointsType = 'EARNED' " +
+            "GROUP BY ph.userId ORDER BY dailyPoints DESC")
+    List<Object[]> getDailyRanking(@Param("date") LocalDate date);
+
+    /**
+     * 获取周积分排行榜数据
+     */
+    @Query("SELECT ph.userId, COALESCE(SUM(ph.points), 0) as weeklyPoints FROM PointsHistory ph " +
+            "WHERE ph.operationDate BETWEEN :startDate AND :endDate AND ph.pointsType = 'EARNED' " +
+            "GROUP BY ph.userId ORDER BY weeklyPoints DESC")
+    List<Object[]> getWeeklyRanking(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
+    /**
+     * 获取总积分排行榜数据
+     */
+    @Query("SELECT ph.userId, COALESCE(SUM(ph.points), 0) as totalPoints FROM PointsHistory ph " +
+            "WHERE ph.pointsType = 'EARNED' GROUP BY ph.userId ORDER BY totalPoints DESC")
+    List<Object[]> getTotalRanking();
+
+    /**
+     * 获取用户指定日期之前的积分历史
      */
     @Query("SELECT ph FROM PointsHistory ph WHERE ph.userId = :userId AND ph.operationDate < :beforeDate ORDER BY ph.operationDate DESC")
     List<PointsHistory> findByUserIdAndOperationDateBefore(@Param("userId") Long userId, @Param("beforeDate") LocalDate beforeDate);
 
+    /**
+     * 检查用户在指定日期是否有积分记录
+     */
+    boolean existsByUserIdAndOperationDate(Long userId, LocalDate date);
 }

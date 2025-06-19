@@ -15,7 +15,6 @@ import com.lureclub.points.repository.PointsRepository;
 import com.lureclub.points.repository.PointsHistoryRepository;
 import com.lureclub.points.repository.UserRepository;
 import com.lureclub.points.service.PointsService;
-import com.lureclub.points.util.PointsCalculatorUtil;
 import com.lureclub.points.util.ValidationUtil;
 import com.lureclub.points.entity.points.PointsConverter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 积分服务实现类
+ * 积分服务实现类（最终修复版）
  *
  * @author system
  * @date 2025-06-19
@@ -46,54 +45,42 @@ public class PointsServiceImpl implements PointsService {
     private UserRepository userRepository;
 
     @Autowired
-    private PointsCalculatorUtil pointsCalculatorUtil;
-
-    @Autowired
     private PointsConverter pointsConverter;
 
     @Autowired
     private ValidationUtil validationUtil;
 
-    /**
-     * 获取用户积分信息实现
-     */
     @Override
     public PointsVo getUserPoints(Long userId) {
         Long targetUserId = userId != null ? userId : getCurrentUserId();
 
-        // 确保用户存在
-        User user = userRepository.findActiveUserById(targetUserId).orElse(null);
-        if (user == null) {
+        // 修复：使用正确的Repository方法
+        User user = userRepository.findById(targetUserId).orElse(null);
+        if (user == null || user.getIsDeleted() == 1) {
             throw new UserNotFoundException("用户不存在");
         }
 
-        // 获取或初始化积分记录
         Points points = pointsRepository.findByUserId(targetUserId);
         if (points == null) {
             initUserPoints(targetUserId);
             points = pointsRepository.findByUserId(targetUserId);
         }
 
-        // 处理日期变更（将前一日积分转为有效积分）
-        processDateChange(points);
+        // 处理日期变更
+        processDateChangeIfNeeded(points);
 
-        // 计算有效积分和总积分
-        Integer effectivePoints = calculateEffectivePoints(targetUserId);
+        // 计算总积分
         Integer totalPoints = calculateTotalPoints(targetUserId);
 
-        return pointsConverter.toPointsVo(points, effectivePoints, totalPoints);
+        return pointsConverter.toPointsVo(points, points.getEffectivePoints(), totalPoints);
     }
 
-    /**
-     * 获取用户积分历史实现
-     */
     @Override
     public List<PointsHistoryVo> getUserPointsHistory(Long userId) {
         Long targetUserId = userId != null ? userId : getCurrentUserId();
 
-        // 确保用户存在
-        User user = userRepository.findActiveUserById(targetUserId).orElse(null);
-        if (user == null) {
+        User user = userRepository.findById(targetUserId).orElse(null);
+        if (user == null || user.getIsDeleted() == 1) {
             throw new UserNotFoundException("用户不存在");
         }
 
@@ -105,20 +92,17 @@ public class PointsServiceImpl implements PointsService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 录入用户积分实现（管理员操作）
-     */
     @Override
     @Transactional
     public PointsVo addUserPoints(PointsAddVo pointsAddVo) {
-        // 验证积分数量
+        // 验证参数
         if (!validationUtil.isValidPoints(pointsAddVo.getPoints())) {
             throw new BusinessException("积分数量必须在1-10000之间");
         }
 
-        // 确保用户存在
-        User user = userRepository.findActiveUserById(pointsAddVo.getUserId()).orElse(null);
-        if (user == null) {
+        // 验证用户存在
+        User user = userRepository.findById(pointsAddVo.getUserId()).orElse(null);
+        if (user == null || user.getIsDeleted() == 1) {
             throw new UserNotFoundException("用户不存在");
         }
 
@@ -130,11 +114,11 @@ public class PointsServiceImpl implements PointsService {
         }
 
         // 处理日期变更
-        processDateChange(points);
+        processDateChangeIfNeeded(points);
 
         // 录入当日积分
         points.addTodayPoints(pointsAddVo.getPoints());
-        pointsRepository.save(points);
+        points = pointsRepository.save(points);
 
         // 记录积分历史
         PointsHistory history = new PointsHistory(
@@ -148,23 +132,20 @@ public class PointsServiceImpl implements PointsService {
         return getUserPoints(pointsAddVo.getUserId());
     }
 
-    /**
-     * 抵扣用户积分实现（管理员操作）
-     */
     @Override
     @Transactional
     public PointsVo deductUserPoints(PointsDeductVo pointsDeductVo) {
         Long userId = pointsDeductVo.getUserId();
         Integer deductPoints = pointsDeductVo.getPoints();
 
-        // 验证积分数量
+        // 验证参数
         if (!validationUtil.isValidPoints(deductPoints)) {
             throw new BusinessException("积分数量必须在1-10000之间");
         }
 
-        // 确保用户存在
-        User user = userRepository.findActiveUserById(userId).orElse(null);
-        if (user == null) {
+        // 验证用户存在
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null || user.getIsDeleted() == 1) {
             throw new UserNotFoundException("用户不存在");
         }
 
@@ -175,17 +156,21 @@ public class PointsServiceImpl implements PointsService {
         }
 
         // 处理日期变更
-        processDateChange(points);
+        processDateChangeIfNeeded(points);
 
-        // 检查有效积分是否足够
-        Integer effectivePoints = calculateEffectivePoints(userId);
-        if (effectivePoints < deductPoints) {
+        // 检查是否可以抵扣
+        if (!points.canDeduct(deductPoints)) {
             throw new InsufficientPointsException(
-                    String.format("有效积分不足，当前有效积分: %d，需要抵扣: %d", effectivePoints, deductPoints)
+                    String.format("有效积分不足，当前有效积分: %d，需要抵扣: %d",
+                            points.getEffectivePoints(), deductPoints)
             );
         }
 
-        // 记录积分历史（抵扣记录）
+        // 执行抵扣
+        points.deductEffectivePoints(deductPoints);
+        points = pointsRepository.save(points);
+
+        // 记录抵扣历史
         PointsHistory history = new PointsHistory(
                 userId,
                 PointsType.DEDUCTED,
@@ -197,9 +182,6 @@ public class PointsServiceImpl implements PointsService {
         return getUserPoints(userId);
     }
 
-    /**
-     * 检查是否可抵扣指定积分实现
-     */
     @Override
     public Boolean checkDeductPoints(Long userId, Integer points) {
         if (!validationUtil.isValidPoints(points)) {
@@ -207,32 +189,34 @@ public class PointsServiceImpl implements PointsService {
         }
 
         try {
-            Integer effectivePoints = calculateEffectivePoints(userId);
-            return effectivePoints >= points;
+            Points userPoints = pointsRepository.findByUserId(userId);
+            if (userPoints == null) {
+                return false;
+            }
+
+            processDateChangeIfNeeded(userPoints);
+            return userPoints.canDeduct(points);
         } catch (Exception e) {
             return false;
         }
     }
 
-    /**
-     * 获取用户有效积分实现
-     */
     @Override
     public Integer getUserEffectivePoints(Long userId) {
-        return calculateEffectivePoints(userId);
+        Points points = pointsRepository.findByUserId(userId);
+        if (points == null) {
+            return 0;
+        }
+
+        processDateChangeIfNeeded(points);
+        return points.getEffectivePoints();
     }
 
-    /**
-     * 获取用户总积分实现
-     */
     @Override
     public Integer getUserTotalPoints(Long userId) {
         return calculateTotalPoints(userId);
     }
 
-    /**
-     * 初始化用户积分记录实现
-     */
     @Override
     @Transactional
     public void initUserPoints(Long userId) {
@@ -243,70 +227,61 @@ public class PointsServiceImpl implements PointsService {
         }
     }
 
-    /**
-     * 获取所有用户积分数据实现（管理员）
-     */
     @Override
     public List<PointsVo> getAllUserPoints() {
-        List<User> allUsers = userRepository.findAllActiveUsers();
+        // 修复：直接查询所有活跃用户
+        List<User> allUsers = userRepository.findAll().stream()
+                .filter(user -> user.getIsDeleted() == 0)
+                .collect(Collectors.toList());
 
         return allUsers.stream()
                 .map(user -> {
-                    // 获取或初始化积分记录
-                    Points points = pointsRepository.findByUserId(user.getId());
-                    if (points == null) {
-                        initUserPoints(user.getId());
-                        points = pointsRepository.findByUserId(user.getId());
+                    try {
+                        return getUserPoints(user.getId());
+                    } catch (Exception e) {
+                        // 记录错误但不影响其他用户
+                        return null;
                     }
-
-                    // 处理日期变更
-                    processDateChange(points);
-
-                    // 计算有效积分和总积分
-                    Integer effectivePoints = calculateEffectivePoints(user.getId());
-                    Integer totalPoints = calculateTotalPoints(user.getId());
-
-                    return pointsConverter.toPointsVo(points, effectivePoints, totalPoints);
                 })
+                .filter(pointsVo -> pointsVo != null)
                 .collect(Collectors.toList());
     }
 
     /**
-     * 处理日期变更逻辑
+     * 处理日期变更
      */
-    private void processDateChange(Points points) {
-        LocalDate today = LocalDate.now();
-
-        // 如果最后更新日期不是今天，则处理日期变更
-        if (points.getLastPointsDate() == null || !points.getLastPointsDate().equals(today)) {
-            points.processDateChange();
+    @Transactional
+    public void processDateChangeIfNeeded(Points points) {
+        if (points.processDateChange()) {
             pointsRepository.save(points);
         }
     }
 
     /**
-     * 修复：计算用户有效积分
-     * 有效积分 = 历史所有获得积分 - 历史所有抵扣积分 - 当日积分
+     * 批量处理日期变更（供定时任务使用）
      */
-    private Integer calculateEffectivePoints(Long userId) {
+    @Transactional
+    public int batchProcessDateChange() {
         LocalDate today = LocalDate.now();
+        List<Points> pointsNeedProcessing = pointsRepository.findPointsNeedDateProcessing(today);
 
-        // 使用新的Repository方法获取今天之前的积分历史
-        List<PointsHistory> historiesBeforeToday = pointsHistoryRepository
-                .findByUserIdAndOperationDateBefore(userId, today);
-
-        int effectivePoints = 0;
-        for (PointsHistory history : historiesBeforeToday) {
-            // EARNED类型为正数，DEDUCTED类型已经是负数
-            effectivePoints += history.getPoints();
+        int processedCount = 0;
+        for (Points points : pointsNeedProcessing) {
+            try {
+                if (points.processDateChange()) {
+                    pointsRepository.save(points);
+                    processedCount++;
+                }
+            } catch (Exception e) {
+                // 记录错误但继续处理其他记录
+            }
         }
 
-        return Math.max(0, effectivePoints);
+        return processedCount;
     }
 
     /**
      * 计算用户总积分
-     * 总积分 = 历史所有获得积分的总和（不包括抵扣）
      */
     private Integer calculateTotalPoints(Long userId) {
         Integer totalPoints = pointsHistoryRepository.calculateTotalPoints(userId);
@@ -320,7 +295,6 @@ public class PointsServiceImpl implements PointsService {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (principal instanceof Long) {
             Long id = (Long) principal;
-            // 如果是负数，说明是管理员，抛出异常
             if (id < 0) {
                 throw new BusinessException("管理员无法查看个人积分");
             }
@@ -328,5 +302,4 @@ public class PointsServiceImpl implements PointsService {
         }
         throw new BusinessException("用户未登录");
     }
-
 }

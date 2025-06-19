@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * 积分实体类（包含有效积分、总积分）
+ * 积分实体类（最终修复版）
  *
  * @author system
  * @date 2025-06-19
@@ -31,6 +31,12 @@ public class Points {
     private Integer todayPoints = 0;
 
     /**
+     * 有效积分（修复：确保数据库有此字段）
+     */
+    @Column(name = "effective_points", nullable = false)
+    private Integer effectivePoints = 0;
+
+    /**
      * 最后积分更新日期
      */
     @Column(name = "last_points_date")
@@ -52,6 +58,7 @@ public class Points {
     public Points() {
         this.createTime = LocalDateTime.now();
         this.updateTime = LocalDateTime.now();
+        this.lastPointsDate = LocalDate.now();
     }
 
     public Points(Long userId) {
@@ -59,26 +66,35 @@ public class Points {
         this.userId = userId;
     }
 
-    // 核心方法
+    // 业务方法
 
     /**
-     * 处理当日积分转换
-     * 当日积分次日自动转为有效积分
+     * 处理日期变更 - 将当日积分转为有效积分
      */
-    public void processDateChange() {
+    public boolean processDateChange() {
         LocalDate today = LocalDate.now();
-        if (lastPointsDate != null && !lastPointsDate.equals(today)) {
-            // 前一日积分转为有效积分，当日积分清零
-            this.todayPoints = 0;
+
+        // 如果最后更新日期不是今天，且有当日积分，则转换
+        if (lastPointsDate != null && !lastPointsDate.equals(today) && todayPoints > 0) {
+            effectivePoints += todayPoints;
+            todayPoints = 0;
+            lastPointsDate = today;
+            updateTime = LocalDateTime.now();
+            return true;
         }
-        this.lastPointsDate = today;
-        this.updateTime = LocalDateTime.now();
+
+        // 如果是第一次设置或日期为空
+        if (lastPointsDate == null) {
+            lastPointsDate = today;
+            updateTime = LocalDateTime.now();
+            return true;
+        }
+
+        return false;
     }
 
     /**
      * 录入当日积分
-     *
-     * @param points 积分数量
      */
     public void addTodayPoints(Integer points) {
         if (points != null && points > 0) {
@@ -90,11 +106,35 @@ public class Points {
 
     /**
      * 抵扣有效积分
-     *
-     * @param points 抵扣积分数量
      */
     public void deductEffectivePoints(Integer points) {
-        if (points != null && points > 0) {
+        if (points == null || points <= 0) {
+            throw new IllegalArgumentException("抵扣积分必须大于0");
+        }
+
+        if (effectivePoints < points) {
+            throw new IllegalArgumentException(
+                    String.format("有效积分不足，当前有效积分: %d，需要抵扣: %d", effectivePoints, points)
+            );
+        }
+
+        this.effectivePoints -= points;
+        this.updateTime = LocalDateTime.now();
+    }
+
+    /**
+     * 检查是否可以抵扣指定积分
+     */
+    public boolean canDeduct(Integer points) {
+        return points != null && points > 0 && effectivePoints >= points;
+    }
+
+    /**
+     * 调整有效积分（管理员操作）
+     */
+    public void adjustEffectivePoints(Integer points) {
+        if (points != null) {
+            this.effectivePoints = Math.max(0, this.effectivePoints + points);
             this.updateTime = LocalDateTime.now();
         }
     }
@@ -121,7 +161,15 @@ public class Points {
     }
 
     public void setTodayPoints(Integer todayPoints) {
-        this.todayPoints = todayPoints;
+        this.todayPoints = todayPoints != null ? todayPoints : 0;
+    }
+
+    public Integer getEffectivePoints() {
+        return effectivePoints;
+    }
+
+    public void setEffectivePoints(Integer effectivePoints) {
+        this.effectivePoints = effectivePoints != null ? effectivePoints : 0;
     }
 
     public LocalDate getLastPointsDate() {
@@ -153,4 +201,14 @@ public class Points {
         this.updateTime = LocalDateTime.now();
     }
 
+    @Override
+    public String toString() {
+        return "Points{" +
+                "id=" + id +
+                ", userId=" + userId +
+                ", todayPoints=" + todayPoints +
+                ", effectivePoints=" + effectivePoints +
+                ", lastPointsDate=" + lastPointsDate +
+                '}';
+    }
 }
