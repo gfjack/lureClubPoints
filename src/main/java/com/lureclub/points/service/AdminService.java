@@ -2,7 +2,6 @@ package com.lureclub.points.service;
 
 import com.lureclub.points.entity.admin.vo.request.AdminLoginVo;
 import com.lureclub.points.entity.admin.vo.request.AdminCreateVo;
-import com.lureclub.points.entity.admin.vo.response.AdminListVo;
 import com.lureclub.points.entity.admin.vo.response.AdminVo;
 import com.lureclub.points.entity.admin.vo.response.LoginVo;
 
@@ -43,14 +42,6 @@ public interface AdminService {
      * 管理员登出
      */
     void logout();
-
-    // 在AdminService接口中添加方法
-    /**
-     * 获取管理员列表（用于列表显示）
-     *
-     * @return 管理员列表
-     */
-    List<AdminListVo> getAdminList();
 
     /**
      * 根据用户名查找管理员
