@@ -1,0 +1,49 @@
+# 生产环境配置
+server:
+  port: 8080
+
+spring:
+  # 数据库配置 - 生产环境
+  datasource:
+    url: jdbc:mysql://localhost:3306/lureclub_points?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai
+    username: ${DB_USERNAME:lureclub}
+    password: ${DB_PASSWORD:your_password}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # JPA配置 - 生产环境
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  # SQL初始化配置
+  sql:
+    init:
+      mode: never
+
+# 日志配置 - 生产环境
+logging:
+  level:
+    com.lureclub: INFO
+    org.springframework.security: WARN
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: /var/log/lureclub/application.log
+
+# 文件上传路径 - 生产环境
+file:
+  upload:
+    path: /data/uploads/lureclub/
+
+# JWT配置 - 生产环境使用环境变量
+jwt:
+  secret: ${JWT_SECRET:your_super_secret_jwt_key_for_production}
+  expiration: 86400000
