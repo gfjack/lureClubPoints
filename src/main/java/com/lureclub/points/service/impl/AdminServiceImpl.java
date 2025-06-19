@@ -3,7 +3,6 @@ package com.lureclub.points.service.impl;
 import com.lureclub.points.entity.admin.Admin;
 import com.lureclub.points.entity.admin.vo.request.AdminLoginVo;
 import com.lureclub.points.entity.admin.vo.request.AdminCreateVo;
-import com.lureclub.points.entity.admin.vo.response.AdminListVo;
 import com.lureclub.points.entity.admin.vo.response.AdminVo;
 import com.lureclub.points.entity.admin.vo.response.LoginVo;
 import com.lureclub.points.exception.BusinessException;
@@ -151,25 +150,6 @@ public class AdminServiceImpl implements AdminService {
             return id < 0 ? -id : id;
         }
         throw new BusinessException("管理员未登录");
-    }
-
-    /**
-     * 在AdminServiceImpl中实现
-     */
-    @Override
-    public List<AdminListVo> getAdminList() {
-        List<Admin> admins = adminRepository.findAllActive();
-
-        return admins.stream()
-                .map(admin -> new AdminListVo(
-                        admin.getId(),
-                        admin.getUsername(),
-                        admin.getRealName(),
-                        admin.getIsEnabled(),
-                        admin.getCreateTime(),
-                        null // 最后登录时间，如果需要可以添加字段
-                ))
-                .collect(Collectors.toList());
     }
 
 }

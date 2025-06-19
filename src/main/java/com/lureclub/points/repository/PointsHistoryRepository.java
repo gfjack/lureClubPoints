@@ -47,12 +47,14 @@ public interface PointsHistoryRepository extends JpaRepository<PointsHistory, Lo
     Integer calculateTotalPoints(@Param("userId") Long userId);
 
     /**
-     * 计算用户有效积分（获得积分 - 抵扣积分，排除当日积分）
+     * 修复：计算用户有效积分（获得积分 - 抵扣积分，排除当日积分）
+     * 由于JPA的限制，这个方法在Service层手动实现
      *
      * @param userId 用户ID
      * @param today 今天日期
-     * @return 有效积分
+     * @return 有效积分（此方法不再使用，保留接口兼容性）
      */
+    @Deprecated
     @Query("SELECT COALESCE(SUM(ph.points), 0) FROM PointsHistory ph WHERE ph.userId = :userId AND ph.operationDate < :today")
     Integer calculateEffectivePoints(@Param("userId") Long userId, @Param("today") LocalDate today);
 
@@ -65,5 +67,15 @@ public interface PointsHistoryRepository extends JpaRepository<PointsHistory, Lo
      */
     @Query("SELECT ph FROM PointsHistory ph WHERE ph.operationDate BETWEEN :startDate AND :endDate ORDER BY ph.userId, ph.operationDate DESC")
     List<PointsHistory> findAllByDateRange(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
+    /**
+     * 新增：获取用户指定日期之前的所有积分历史（用于有效积分计算）
+     *
+     * @param userId 用户ID
+     * @param beforeDate 指定日期
+     * @return 积分历史列表
+     */
+    @Query("SELECT ph FROM PointsHistory ph WHERE ph.userId = :userId AND ph.operationDate < :beforeDate ORDER BY ph.operationDate DESC")
+    List<PointsHistory> findByUserIdAndOperationDateBefore(@Param("userId") Long userId, @Param("beforeDate") LocalDate beforeDate);
 
 }

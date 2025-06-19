@@ -49,8 +49,8 @@ public class FileUploadUtil {
         // 验证文件
         validateImageFile(file);
 
-        // 【修复】正确拼接路径，避免双斜杠问题
-        String fullPath = normalizeUploadPath(uploadPath, prizeImagesPath);
+        // 修复：正确拼接路径
+        String fullPath = buildUploadPath(uploadPath, prizeImagesPath);
         createDirectoryIfNotExists(fullPath);
 
         // 生成文件名
@@ -61,8 +61,8 @@ public class FileUploadUtil {
             Path filePath = Paths.get(fullPath, fileName);
             Files.copy(file.getInputStream(), filePath);
 
-            // 【修复】返回正确的访问URL
-            return normalizeUrlPath(prizeImagesPath, fileName);
+            // 修复：返回正确的访问URL
+            return buildUrlPath(prizeImagesPath, fileName);
 
         } catch (IOException e) {
             throw new BusinessException("文件上传失败: " + e.getMessage());
@@ -70,37 +70,27 @@ public class FileUploadUtil {
     }
 
     /**
-     * 【新增】规范化上传路径拼接
+     * 修复：构建上传路径
      */
-    private String normalizeUploadPath(String basePath, String subPath) {
-        // 确保基础路径以/结尾
-        if (!basePath.endsWith("/")) {
-            basePath += "/";
+    private String buildUploadPath(String basePath, String subPath) {
+        // 移除路径前后的斜杠并重新组合
+        String cleanBasePath = basePath.replaceAll("^/+|/+$", "");
+        String cleanSubPath = subPath.replaceAll("^/+|/+$", "");
+
+        if (cleanBasePath.isEmpty()) {
+            return File.separator + cleanSubPath;
         }
 
-        // 确保子路径不以/开头
-        if (subPath.startsWith("/")) {
-            subPath = subPath.substring(1);
-        }
-
-        return basePath + subPath;
+        return File.separator + cleanBasePath + File.separator + cleanSubPath;
     }
 
     /**
-     * 【新增】规范化URL路径拼接
+     * 修复：构建URL路径
      */
-    private String normalizeUrlPath(String basePath, String fileName) {
-        // 确保路径以/开头
-        if (!basePath.startsWith("/")) {
-            basePath = "/" + basePath;
-        }
-
-        // 确保路径以/结尾
-        if (!basePath.endsWith("/")) {
-            basePath += "/";
-        }
-
-        return basePath + fileName;
+    private String buildUrlPath(String subPath, String fileName) {
+        // 确保子路径以/开头，不以/结尾
+        String cleanSubPath = subPath.replaceAll("^/+|/+$", "");
+        return "/" + cleanSubPath + "/" + fileName;
     }
 
     /**
@@ -195,8 +185,8 @@ public class FileUploadUtil {
         }
 
         try {
-            // 【修复】正确构建完整文件路径
-            String fullPath = normalizeUploadPath(uploadPath, fileUrl);
+            // 修复：正确构建完整文件路径
+            String fullPath = buildUploadPath(uploadPath, fileUrl);
             Path filePath = Paths.get(fullPath);
             return Files.deleteIfExists(filePath);
         } catch (IOException e) {

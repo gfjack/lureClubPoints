@@ -35,14 +35,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
     User findByPhone(String phone);
 
     /**
-     * 根据用户名或手机号查找用户
+     * 根据用户名或手机号查找用户（修复方法）
      *
-     * @param username 用户名
-     * @param phone 手机号
+     * @param identifier 用户名或手机号
      * @return 用户信息
      */
-    @Query("SELECT u FROM User u WHERE (u.username = :username OR u.phone = :phone) AND u.isDeleted = 0")
-    User findByUsernameOrPhone(@Param("username") String username, @Param("phone") String phone);
+    @Query("SELECT u FROM User u WHERE (u.username = :identifier OR u.phone = :identifier) AND u.isDeleted = 0")
+    User findByUsernameOrPhone(@Param("identifier") String identifier);
 
     /**
      * 检查用户名是否存在

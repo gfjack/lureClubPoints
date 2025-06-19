@@ -38,11 +38,11 @@ jwt:
   secret: lureclub2025secretkey
   expiration: 86400000 # 24小时
 
-# 文件上传路径配置 【修复】避免路径重复
+# 文件上传路径配置（修复路径重复问题）
 file:
   upload:
-    path: /uploads/
-    prize-images: /prizes/
+    path: uploads
+    prize-images: prizes
 
 # Swagger配置
 springdoc:

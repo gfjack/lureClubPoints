@@ -41,7 +41,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/user/auth/login", "/api/user/auth/register").permitAll()
                         .requestMatchers("/api/admin/auth/login", "/api/admin/auth/create").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/uploads/**", "/static/**").permitAll()
+                        // 修复：正确配置静态资源路径
+                        .requestMatchers("/uploads/**", "/static/**", "/lureclub/uploads/**", "/lureclub/static/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         // 管理员接口需要管理员权限
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

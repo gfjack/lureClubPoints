@@ -50,8 +50,8 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public LoginVo login(UserLoginVo loginVo) {
-        // 根据用户名或手机号查找用户
-        User user = userRepository.findByUsernameOrPhone(loginVo.getUsername(), loginVo.getUsername());
+        // 修复：使用修复后的Repository方法
+        User user = userRepository.findByUsernameOrPhone(loginVo.getUsername());
 
         if (user == null || user.getIsDeleted() == 1) {
             throw new BusinessException("用户不存在");
@@ -116,7 +116,7 @@ public class UserServiceImpl implements UserService {
         // 保存用户
         user = userRepository.save(user);
 
-        // 【修复】初始化用户积分记录
+        // 初始化用户积分记录
         pointsService.initUserPoints(user.getId());
 
         return userConverter.toUserVo(user);
@@ -151,7 +151,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public UserVo findByUsernameOrPhone(String username) {
-        User user = userRepository.findByUsernameOrPhone(username, username);
+        User user = userRepository.findByUsernameOrPhone(username);
         if (user == null || user.getIsDeleted() == 1) {
             return null;
         }
