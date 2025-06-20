@@ -8,6 +8,9 @@ import com.lureclub.points.entity.points.vo.response.PointsHistoryVo;
 import com.lureclub.points.entity.common.ApiResponse;
 import com.lureclub.points.service.PointsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -20,6 +23,7 @@ import java.util.List;
  * @date 2025-06-19
  */
 @RestController
+@RequestMapping("/api/admin/points")
 public class AdminPointsController implements AdminPointsApi {
 
     @Autowired
@@ -29,6 +33,7 @@ public class AdminPointsController implements AdminPointsApi {
      * 获取所有用户积分数据实现
      */
     @Override
+    @GetMapping("/all")
     public ApiResponse<List<PointsVo>> getAllUserPoints() {
         try {
             // 这里需要在PointsService中添加getAllUserPoints方法
@@ -43,6 +48,7 @@ public class AdminPointsController implements AdminPointsApi {
      * 搜索单个用户积分数据实现
      */
     @Override
+    @GetMapping("/user/{userId}")
     public ApiResponse<PointsVo> getUserPointsById(Long userId) {
         try {
             PointsVo result = pointsService.getUserPoints(userId);
@@ -56,6 +62,7 @@ public class AdminPointsController implements AdminPointsApi {
      * 获取用户积分历史实现
      */
     @Override
+    @GetMapping("/history/{userId}")
     public ApiResponse<List<PointsHistoryVo>> getUserPointsHistory(Long userId) {
         try {
             List<PointsHistoryVo> result = pointsService.getUserPointsHistory(userId);
@@ -69,6 +76,7 @@ public class AdminPointsController implements AdminPointsApi {
      * 录入用户积分实现
      */
     @Override
+    @PostMapping("/add")
     public ApiResponse<PointsVo> addUserPoints(@Valid PointsAddVo pointsAddVo) {
         try {
             PointsVo result = pointsService.addUserPoints(pointsAddVo);
@@ -82,6 +90,7 @@ public class AdminPointsController implements AdminPointsApi {
      * 抵扣用户积分实现
      */
     @Override
+    @PostMapping("/deduct")
     public ApiResponse<PointsVo> deductUserPoints(@Valid PointsDeductVo pointsDeductVo) {
         try {
             PointsVo result = pointsService.deductUserPoints(pointsDeductVo);

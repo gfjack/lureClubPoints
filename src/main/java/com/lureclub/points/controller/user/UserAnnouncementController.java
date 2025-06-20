@@ -7,6 +7,9 @@ import com.lureclub.points.entity.announcement.vo.response.AnnouncementListVo;
 import com.lureclub.points.entity.common.ApiResponse;
 import com.lureclub.points.service.AnnouncementService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -19,6 +22,7 @@ import java.util.List;
  * @date 2025-06-19
  */
 @RestController
+@RequestMapping("/api/user/announcement")
 public class UserAnnouncementController implements UserAnnouncementApi {
 
     @Autowired
@@ -28,6 +32,7 @@ public class UserAnnouncementController implements UserAnnouncementApi {
      * 获取所有公告内容实现
      */
     @Override
+    @GetMapping("")
     public ApiResponse<List<AnnouncementListVo>> getAllAnnouncements() {
         try {
             List<AnnouncementListVo> result = announcementService.getAllAnnouncements();
@@ -41,6 +46,7 @@ public class UserAnnouncementController implements UserAnnouncementApi {
      * 根据日期搜索公告实现
      */
     @Override
+    @PostMapping("/search")
     public ApiResponse<List<AnnouncementListVo>> searchAnnouncements(@Valid AnnouncementSearchVo searchVo) {
         try {
             List<AnnouncementListVo> result = announcementService.searchAnnouncements(searchVo);
@@ -54,6 +60,7 @@ public class UserAnnouncementController implements UserAnnouncementApi {
      * 获取公告详情实现
      */
     @Override
+    @GetMapping("/{id}")
     public ApiResponse<AnnouncementVo> getAnnouncementDetail(Long id) {
         try {
             AnnouncementVo result = announcementService.getAnnouncementDetail(id);

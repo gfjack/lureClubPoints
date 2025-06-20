@@ -6,6 +6,8 @@ import com.lureclub.points.entity.points.vo.response.PointsHistoryVo;
 import com.lureclub.points.entity.common.ApiResponse;
 import com.lureclub.points.service.PointsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -17,6 +19,7 @@ import java.util.List;
  * @date 2025-06-19
  */
 @RestController
+@RequestMapping("/api/user/points")
 public class UserPointsController implements UserPointsApi {
 
     @Autowired
@@ -26,6 +29,7 @@ public class UserPointsController implements UserPointsApi {
      * 获取用户积分信息实现
      */
     @Override
+    @GetMapping("")
     public ApiResponse<PointsVo> getUserPoints() {
         try {
             PointsVo result = pointsService.getUserPoints(null);
@@ -39,6 +43,7 @@ public class UserPointsController implements UserPointsApi {
      * 获取用户积分历史记录实现
      */
     @Override
+    @GetMapping("/history")
     public ApiResponse<List<PointsHistoryVo>> getUserPointsHistory(Long userId) {
         try {
             List<PointsHistoryVo> result = pointsService.getUserPointsHistory(userId);
@@ -52,6 +57,7 @@ public class UserPointsController implements UserPointsApi {
      * 检查是否可抵扣指定积分实现
      */
     @Override
+    @GetMapping("/check-deduct")
     public ApiResponse<Boolean> checkDeductPoints(Long userId, Integer points) {
         try {
             Boolean result = pointsService.checkDeductPoints(userId, points);

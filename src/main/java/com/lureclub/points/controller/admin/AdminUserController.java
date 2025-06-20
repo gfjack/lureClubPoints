@@ -8,7 +8,7 @@ import com.lureclub.points.entity.user.vo.response.UserVo;
 import com.lureclub.points.entity.common.ApiResponse;
 import com.lureclub.points.service.AdminUserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.util.List;
@@ -20,6 +20,7 @@ import java.util.List;
  * @date 2025-06-19
  */
 @RestController
+@RequestMapping("/api/admin/user")
 public class AdminUserController implements AdminUserApi {
 
     @Autowired
@@ -29,6 +30,7 @@ public class AdminUserController implements AdminUserApi {
      * 获取所有用户实现
      */
     @Override
+    @GetMapping("/all")
     public ApiResponse<List<UserVo>> getAllUsers() {
         try {
             List<UserVo> result = adminUserService.getAllUsers();
@@ -42,6 +44,7 @@ public class AdminUserController implements AdminUserApi {
      * 搜索用户实现
      */
     @Override
+    @PostMapping("/search")
     public ApiResponse<List<UserVo>> searchUsers(@Valid UserSearchVo searchVo) {
         try {
             List<UserVo> result = adminUserService.searchUsers(searchVo);
@@ -55,6 +58,7 @@ public class AdminUserController implements AdminUserApi {
      * 创建用户实现
      */
     @Override
+    @PostMapping("")
     public ApiResponse<UserVo> createUser(@Valid UserCreateVo createVo) {
         try {
             UserVo result = adminUserService.createUser(createVo);
@@ -68,6 +72,7 @@ public class AdminUserController implements AdminUserApi {
      * 更新用户信息实现
      */
     @Override
+    @PutMapping("/{userId}")
     public ApiResponse<UserVo> updateUser(Long userId, @Valid UserUpdateVo updateVo) {
         try {
             UserVo result = adminUserService.updateUser(userId, updateVo);
@@ -81,6 +86,7 @@ public class AdminUserController implements AdminUserApi {
      * 删除用户实现
      */
     @Override
+    @DeleteMapping("/{userId}")
     public ApiResponse<String> deleteUser(Long userId) {
         try {
             adminUserService.deleteUser(userId);

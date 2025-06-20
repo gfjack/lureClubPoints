@@ -6,7 +6,7 @@ import com.lureclub.points.entity.message.vo.response.MessageVo;
 import com.lureclub.points.entity.common.ApiResponse;
 import com.lureclub.points.service.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.util.List;
@@ -18,6 +18,7 @@ import java.util.List;
  * @date 2025-06-19
  */
 @RestController
+@RequestMapping("/api/admin/message")
 public class AdminMessageController implements AdminMessageApi {
 
     @Autowired
@@ -27,6 +28,7 @@ public class AdminMessageController implements AdminMessageApi {
      * 获取所有留言实现（管理员）
      */
     @Override
+    @GetMapping("")
     public ApiResponse<List<MessageVo>> getAllMessages() {
         try {
             List<MessageVo> result = messageService.getAllMessagesForAdmin();
@@ -40,6 +42,7 @@ public class AdminMessageController implements AdminMessageApi {
      * 回复留言实现
      */
     @Override
+    @PostMapping("/{messageId}/reply")
     public ApiResponse<MessageVo> replyMessage(Long messageId, @Valid MessageReplyVo replyVo) {
         try {
             MessageVo result = messageService.replyMessage(messageId, replyVo);
@@ -53,6 +56,7 @@ public class AdminMessageController implements AdminMessageApi {
      * 设置留言可见性实现
      */
     @Override
+    @PutMapping("/{messageId}/visibility")
     public ApiResponse<MessageVo> setMessageVisibility(Long messageId, Boolean isVisible) {
         try {
             MessageVo result = messageService.setMessageVisibility(messageId, isVisible);

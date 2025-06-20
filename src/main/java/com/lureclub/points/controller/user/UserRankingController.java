@@ -5,6 +5,8 @@ import com.lureclub.points.entity.ranking.vo.response.RankingItemVo;
 import com.lureclub.points.entity.common.ApiResponse;
 import com.lureclub.points.service.RankingService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -16,6 +18,7 @@ import java.util.List;
  * @date 2025-06-19
  */
 @RestController
+@RequestMapping("/api/user/ranking")
 public class UserRankingController implements UserRankingApi {
 
     @Autowired
@@ -25,6 +28,7 @@ public class UserRankingController implements UserRankingApi {
      * 获取当日排行榜实现
      */
     @Override
+    @GetMapping("/daily")
     public ApiResponse<List<RankingItemVo>> getDailyRanking() {
         try {
             List<RankingItemVo> result = rankingService.getDailyRanking();
@@ -38,6 +42,7 @@ public class UserRankingController implements UserRankingApi {
      * 获取本周排行榜实现
      */
     @Override
+    @GetMapping("/weekly")
     public ApiResponse<List<RankingItemVo>> getWeeklyRanking() {
         try {
             List<RankingItemVo> result = rankingService.getWeeklyRanking();
@@ -51,6 +56,7 @@ public class UserRankingController implements UserRankingApi {
      * 获取总排行榜实现
      */
     @Override
+    @GetMapping("/total")
     public ApiResponse<List<RankingItemVo>> getTotalRanking() {
         try {
             List<RankingItemVo> result = rankingService.getTotalRanking();

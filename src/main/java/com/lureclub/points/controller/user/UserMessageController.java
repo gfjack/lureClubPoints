@@ -6,6 +6,9 @@ import com.lureclub.points.entity.message.vo.response.MessageVo;
 import com.lureclub.points.entity.common.ApiResponse;
 import com.lureclub.points.service.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -18,6 +21,7 @@ import java.util.List;
  * @date 2025-06-19
  */
 @RestController
+@RequestMapping("/api/user/message")
 public class UserMessageController implements UserMessageApi {
 
     @Autowired
@@ -27,6 +31,7 @@ public class UserMessageController implements UserMessageApi {
      * 查看所有留言实现
      */
     @Override
+    @GetMapping("")
     public ApiResponse<List<MessageVo>> getAllMessages() {
         try {
             List<MessageVo> result = messageService.getAllPublicMessages();
@@ -40,6 +45,7 @@ public class UserMessageController implements UserMessageApi {
      * 用户上传留言实现
      */
     @Override
+    @PostMapping("")
     public ApiResponse<MessageVo> createMessage(@Valid MessageCreateVo createVo) {
         try {
             MessageVo result = messageService.createMessage(createVo);

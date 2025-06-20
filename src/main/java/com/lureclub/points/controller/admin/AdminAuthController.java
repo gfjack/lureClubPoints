@@ -8,6 +8,7 @@ import com.lureclub.points.entity.admin.vo.response.LoginVo;
 import com.lureclub.points.entity.common.ApiResponse;
 import com.lureclub.points.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,6 +22,7 @@ import jakarta.validation.Valid;
  * @date 2025-06-19
  */
 @RestController
+@RequestMapping("/api/admin/auth")
 public class AdminAuthController implements AdminAuthApi {
 
     @Autowired
@@ -30,6 +32,7 @@ public class AdminAuthController implements AdminAuthApi {
      * 管理员登录实现
      */
     @Override
+    @PostMapping("/login")
     public ApiResponse<LoginVo> login(@Valid AdminLoginVo loginVo) {
         try {
             LoginVo result = adminService.login(loginVo);
@@ -43,6 +46,7 @@ public class AdminAuthController implements AdminAuthApi {
      * 获取当前管理员信息实现
      */
     @Override
+    @GetMapping("/current")
     public ApiResponse<AdminVo> getCurrentAdmin() {
         try {
             AdminVo result = adminService.getCurrentAdmin();
@@ -56,6 +60,7 @@ public class AdminAuthController implements AdminAuthApi {
      * 添加管理员实现
      */
     @Override
+    @PostMapping("/create")
     public ApiResponse<AdminVo> createAdmin(@Valid AdminCreateVo createVo) {
         try {
             AdminVo result = adminService.createAdmin(createVo);
@@ -69,6 +74,7 @@ public class AdminAuthController implements AdminAuthApi {
      * 管理员登出实现
      */
     @Override
+    @PostMapping("/logout")
     public ApiResponse<String> logout() {
         try {
             adminService.logout();

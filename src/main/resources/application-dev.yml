@@ -1,6 +1,8 @@
 # 开发环境配置
 server:
   port: 8080
+  servlet:
+    context-path: /lureclub
 
 spring:
   # 数据库配置 - 开发环境
