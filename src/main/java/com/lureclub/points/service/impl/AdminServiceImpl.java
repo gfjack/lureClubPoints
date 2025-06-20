@@ -16,6 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -56,7 +57,10 @@ public class AdminServiceImpl implements AdminService {
         }
 
         // 验证密码
-        if (!passwordUtil.matches(loginVo.getPassword(), admin.getPassword())) {
+//        if (!passwordUtil.matches(loginVo.getPassword(), admin.getPassword())) {
+//            throw new BusinessException("密码错误");
+//        }
+        if (!Objects.equals(loginVo.getPassword(), admin.getPassword())) {
             throw new BusinessException("密码错误");
         }
 

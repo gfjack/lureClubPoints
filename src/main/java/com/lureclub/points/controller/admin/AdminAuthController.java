@@ -22,7 +22,7 @@ import jakarta.validation.Valid;
  * @date 2025-06-19
  */
 @RestController
-@RequestMapping("/api/admin/auth")
+@RequestMapping("api/admin/auth")
 public class AdminAuthController implements AdminAuthApi {
 
     @Autowired

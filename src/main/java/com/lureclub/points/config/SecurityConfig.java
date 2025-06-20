@@ -158,7 +158,7 @@ import java.util.Arrays;
 /**
  * Spring Security配置类 - 最终解决方案
  *
- * 使用更简单直接的方法：对所有/lureclub/api/路径进行统一处理
+ * 使用更简单直接的方法：对所有/api/路径进行统一处理
  *
  * @author system
  * @date 2025-06-20
@@ -202,7 +202,7 @@ public class SecurityConfig {
                         .requestMatchers("/uploads/**", "/static/**", "/favicon.ico").permitAll()
 
                         // 🔥 最简单的解决方案：所有API都先允许，然后在filter中控制
-                        .requestMatchers("/lureclub/api/**").permitAll()
+                        .requestMatchers("/api/**").permitAll()
 
                         // 其他所有请求都需要认证
                         .anyRequest().authenticated()

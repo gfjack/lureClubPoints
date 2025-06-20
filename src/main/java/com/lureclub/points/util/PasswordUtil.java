@@ -29,6 +29,13 @@ public class PasswordUtil {
     }
 
     /**
+     * 解码
+     */
+    public String decode(String encodedPassword) {
+        return passwordEncoder.encode(encodedPassword);
+    }
+
+    /**
      * 验证密码
      *
      * @param rawPassword 原始密码

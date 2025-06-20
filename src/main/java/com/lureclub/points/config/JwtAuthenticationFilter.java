@@ -377,31 +377,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * 判断是否是认证路径
      */
     private boolean isAuthPath(String path) {
-        return path.equals("/lureclub/api/user/auth/login") ||
-                path.equals("/lureclub/api/user/auth/register") ||
-                path.equals("/lureclub/api/admin/auth/login") ||
-                path.equals("/lureclub/api/admin/auth/create");
+        return path.equals("/api/user/auth/login") ||
+                path.equals("/api/user/auth/register") ||
+                path.equals("/api/admin/auth/login") ||
+                path.equals("/api/admin/auth/create");
     }
 
     /**
      * 判断是否是API路径
      */
     private boolean isApiPath(String path) {
-        return path.startsWith("/lureclub/api/");
+        return path.startsWith("/api/");
     }
 
     /**
      * 判断是否是管理员路径
      */
     private boolean isAdminPath(String path) {
-        return path.startsWith("/lureclub/api/admin/") && !isAuthPath(path);
+        return path.startsWith("/api/admin/") && !isAuthPath(path);
     }
 
     /**
      * 判断是否是用户路径
      */
     private boolean isUserPath(String path) {
-        return path.startsWith("/lureclub/api/user/") && !isAuthPath(path);
+        return path.startsWith("/api/user/") && !isAuthPath(path);
     }
 
     /**
