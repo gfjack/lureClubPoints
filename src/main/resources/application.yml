@@ -16,9 +16,9 @@ spring:
 
   # 数据库配置
   datasource:
-    url: jdbc:mysql://localhost:3306/lureclub_points?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:123456}
+    url: jdbc:mysql://localhost:3306/lureclub_points?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+    username: ${DB_USERNAME:GU}
+    password: ${DB_PASSWORD:Gfj123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 20
@@ -41,6 +41,14 @@ spring:
           batch_size: 20
         order_inserts: true
         order_updates: true
+
+  # SQL初始化配置 - 修复：指向正确的文件
+  sql:
+    init:
+      mode: never
+#      data-locations: classpath:data.sql
+#      continue-on-error: true
+#      encoding: utf-8
 
   # 文件上传配置
   servlet:
@@ -91,6 +99,7 @@ logging:
     org.springframework.security: ${LOG_LEVEL_SECURITY:WARN}
     org.hibernate.SQL: ${LOG_LEVEL_SQL:DEBUG}
     org.hibernate.type.descriptor.sql.BasicBinder: ${LOG_LEVEL_SQL_BIND:TRACE}
+    root: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

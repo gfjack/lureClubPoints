@@ -5,9 +5,9 @@ server:
 spring:
   # 数据库配置 - 开发环境
   datasource:
-    url: jdbc:mysql://localhost:3306/lureclub_points_dev?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
-    username: root
-    password: 123456
+    url: jdbc:mysql://localhost:3306/lureclub_points?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+    username: GU
+    password: Gfj123456
 
   # JPA配置 - 开发环境
   jpa:
@@ -17,12 +17,15 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
 
-  # SQL初始化配置
+  # SQL初始化配置 - 修复：指向正确的文件
   sql:
     init:
-      mode: always
-      data-locations: classpath:data.sql
+      mode: never
+#      data-locations: classpath:data.sql
+#      continue-on-error: true
+#      encoding: utf-8
 
 # 日志配置 - 开发环境
 logging:
@@ -31,8 +34,27 @@ logging:
     org.springframework.security: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    root: INFO
 
 # 文件上传路径 - 开发环境
 file:
   upload:
-    path: D:/uploads/lureclub/
+    path: uploads
+    prize-images: prizes
+
+# JWT配置 - 开发环境
+jwt:
+  secret: lureclub2025secretkey_this_should_be_very_long_and_secure_for_development
+  expiration: 86400000
+
+# 积分任务配置 - 开发环境
+points:
+  task:
+    enabled: true
+    cron: "0 0 1 * * ?"  # 每天凌晨1点
+  check:
+    cron: "0 0 * * * ?"  # 每小时检查
+
+# CORS配置 - 开发环境
+cors:
+  allowed-origins: "http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000,http://127.0.0.1:8080"

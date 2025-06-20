@@ -111,7 +111,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
+
+        // 新增Swagger相关路径检查
+        if (isSwaggerPath(path)) {
+            return true;
+        }
+
         return isPublicPath(path) || isStaticResource(path);
+    }
+
+    /**
+     * 判断是否为Swagger相关路径
+     */
+    private boolean isSwaggerPath(String path) {
+        String[] swaggerPaths = {
+                "/swagger-ui/",
+                "/v3/api-docs/",
+                "/api-docs/",
+                "/swagger-resources/",
+                "/webjars/"
+        };
+
+        for (String swaggerPath : swaggerPaths) {
+            if (path.startsWith(swaggerPath)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

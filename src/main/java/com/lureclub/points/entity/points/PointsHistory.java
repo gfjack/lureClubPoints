@@ -6,7 +6,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * 积分历史实体类（修复版：增加余额追踪字段）
+ * 积分历史实体类（完整修复版）
  *
  * @author system
  * @date 2025-06-19
@@ -45,18 +45,6 @@ public class PointsHistory {
     private LocalDate operationDate;
 
     /**
-     * 修复：新增操作后有效积分余额字段
-     */
-    @Column(name = "effective_points_after", nullable = false)
-    private Integer effectivePointsAfter = 0;
-
-    /**
-     * 修复：新增操作后总积分余额字段
-     */
-    @Column(name = "total_points_after", nullable = false)
-    private Integer totalPointsAfter = 0;
-
-    /**
      * 备注说明
      */
     @Column(name = "remark", length = 500)
@@ -83,41 +71,24 @@ public class PointsHistory {
     }
 
     /**
-     * 修复：增加完整的构造函数，包含余额信息
+     * 便捷方法创建获得积分记录
      */
-    public PointsHistory(Long userId, PointsType pointsType, Integer points,
-                         Integer effectivePointsAfter, Integer totalPointsAfter, String remark) {
-        this();
-        this.userId = userId;
-        this.pointsType = pointsType;
-        this.points = points;
-        this.effectivePointsAfter = effectivePointsAfter != null ? effectivePointsAfter : 0;
-        this.totalPointsAfter = totalPointsAfter != null ? totalPointsAfter : 0;
-        this.remark = remark;
+    public static PointsHistory createEarnedRecord(Long userId, Integer points, String remark) {
+        return new PointsHistory(userId, PointsType.EARNED, points, remark);
     }
 
     /**
-     * 修复：便捷方法创建获得积分记录
+     * 便捷方法创建抵扣积分记录
      */
-    public static PointsHistory createEarnedRecord(Long userId, Integer points,
-                                                   Integer effectivePointsAfter, Integer totalPointsAfter, String remark) {
-        return new PointsHistory(userId, PointsType.EARNED, points, effectivePointsAfter, totalPointsAfter, remark);
+    public static PointsHistory createDeductedRecord(Long userId, Integer points, String remark) {
+        return new PointsHistory(userId, PointsType.DEDUCTED, -Math.abs(points), remark);
     }
 
     /**
-     * 修复：便捷方法创建抵扣积分记录
+     * 便捷方法创建管理员调整记录
      */
-    public static PointsHistory createDeductedRecord(Long userId, Integer points,
-                                                     Integer effectivePointsAfter, Integer totalPointsAfter, String remark) {
-        return new PointsHistory(userId, PointsType.DEDUCTED, -Math.abs(points), effectivePointsAfter, totalPointsAfter, remark);
-    }
-
-    /**
-     * 修复：便捷方法创建管理员调整记录
-     */
-    public static PointsHistory createAdjustmentRecord(Long userId, Integer points,
-                                                       Integer effectivePointsAfter, Integer totalPointsAfter, String remark) {
-        return new PointsHistory(userId, PointsType.ADMIN_ADJUSTMENT, points, effectivePointsAfter, totalPointsAfter, remark);
+    public static PointsHistory createAdjustmentRecord(Long userId, Integer points, String remark) {
+        return new PointsHistory(userId, PointsType.ADMIN_ADJUSTMENT, points, remark);
     }
 
     /**
@@ -182,25 +153,6 @@ public class PointsHistory {
         this.operationDate = operationDate;
     }
 
-    /**
-     * 修复：新增getter/setter
-     */
-    public Integer getEffectivePointsAfter() {
-        return effectivePointsAfter;
-    }
-
-    public void setEffectivePointsAfter(Integer effectivePointsAfter) {
-        this.effectivePointsAfter = effectivePointsAfter != null ? effectivePointsAfter : 0;
-    }
-
-    public Integer getTotalPointsAfter() {
-        return totalPointsAfter;
-    }
-
-    public void setTotalPointsAfter(Integer totalPointsAfter) {
-        this.totalPointsAfter = totalPointsAfter != null ? totalPointsAfter : 0;
-    }
-
     public String getRemark() {
         return remark;
     }
@@ -225,8 +177,6 @@ public class PointsHistory {
                 ", pointsType=" + pointsType +
                 ", points=" + points +
                 ", operationDate=" + operationDate +
-                ", effectivePointsAfter=" + effectivePointsAfter +
-                ", totalPointsAfter=" + totalPointsAfter +
                 ", remark='" + remark + '\'' +
                 ", createTime=" + createTime +
                 '}';

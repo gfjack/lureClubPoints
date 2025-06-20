@@ -1,6 +1,7 @@
 package com.lureclub.points.exception;
 
 import com.lureclub.points.entity.common.ApiResponse;
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
  * @date 2025-06-19
  */
 @RestControllerAdvice
+@Hidden
 public class GlobalExceptionHandler {
 
     /**

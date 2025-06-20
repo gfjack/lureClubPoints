@@ -27,15 +27,15 @@ public class SwaggerConfig {
                         .version("1.0.0")
                         .contact(new Contact()
                                 .name("系统开发者")
-                                .email("admin@lureclub.com")))
-                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
-                .components(new Components()
-                        .addSecuritySchemes("bearerAuth",
-                                new SecurityScheme()
-                                        .type(SecurityScheme.Type.HTTP)
-                                        .scheme("bearer")
-                                        .bearerFormat("JWT")
-                                        .description("请输入JWT Token")));
+                                .email("admin@lureclub.com")));
+//                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+//                .components(new Components()
+//                        .addSecuritySchemes("bearerAuth",
+//                                new SecurityScheme()
+//                                        .type(SecurityScheme.Type.HTTP)
+//                                        .scheme("bearer")
+//                                        .bearerFormat("JWT")
+//                                        .description("请输入JWT Token")));
     }
 
 }
