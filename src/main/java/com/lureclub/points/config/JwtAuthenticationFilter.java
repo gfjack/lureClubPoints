@@ -19,10 +19,11 @@ import java.io.IOException;
 import java.util.Collections;
 
 /**
- * JWT认证过滤器（完整修复版）
+ * JWT认证过滤器 - 最终版
+ * 适配访问路径：http://localhost:8080
  *
  * @author system
- * @date 2025-06-19
+ * @date 2025-06-20
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -39,150 +40,148 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        String requestURI = request.getRequestURI();
+        String method = request.getMethod();
+
+        logger.debug("JWT过滤器处理请求: {} {}", method, requestURI);
+
         try {
             String token = getTokenFromRequest(request);
 
-            if (StringUtils.hasText(token) && jwtUtil.validateToken(token)) {
-                Long userId = jwtUtil.getUserIdFromToken(token);
+            if (StringUtils.hasText(token)) {
+                logger.debug("找到Token，开始验证...");
 
-                if (isAdminUser(userId)) {
-                    Long realAdminId = Math.abs(userId);
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(
-                                    realAdminId,
-                                    null,
-                                    Collections.singletonList(new SimpleGrantedAuthority(ROLE_ADMIN))
-                            );
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                if (jwtUtil.validateToken(token)) {
+                    Long userId = jwtUtil.getUserIdFromToken(token);
+                    logger.debug("Token验证成功，用户ID: {}", userId);
 
-                    logger.debug("管理员认证成功，ID: {}", realAdminId);
+                    if (isAdminUser(userId)) {
+                        // 管理员：负数ID转为正数，设置ROLE_ADMIN权限
+                        Long realAdminId = Math.abs(userId);
+                        UsernamePasswordAuthenticationToken authentication =
+                                new UsernamePasswordAuthenticationToken(
+                                        realAdminId,
+                                        null,
+                                        Collections.singletonList(new SimpleGrantedAuthority(ROLE_ADMIN))
+                                );
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        logger.debug("✅ 管理员认证成功，ID: {}, 权限: {}", realAdminId, ROLE_ADMIN);
+
+                    } else {
+                        // 普通用户：正数ID，设置ROLE_USER权限
+                        UsernamePasswordAuthenticationToken authentication =
+                                new UsernamePasswordAuthenticationToken(
+                                        userId,
+                                        null,
+                                        Collections.singletonList(new SimpleGrantedAuthority(ROLE_USER))
+                                );
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        logger.debug("✅ 用户认证成功，ID: {}, 权限: {}", userId, ROLE_USER);
+                    }
                 } else {
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(
-                                    userId,
-                                    null,
-                                    Collections.singletonList(new SimpleGrantedAuthority(ROLE_USER))
-                            );
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                    logger.debug("用户认证成功，ID: {}", userId);
+                    logger.warn("Token验证失败");
+                    SecurityContextHolder.clearContext();
                 }
             } else {
-                if (StringUtils.hasText(token)) {
-                    logger.debug("Token验证失败: {}", token.substring(0, Math.min(token.length(), 20)) + "...");
-                }
+                logger.debug("请求中未找到Token");
             }
         } catch (Exception e) {
-            logger.error("JWT认证过程中发生异常: {}", e.getMessage(), e);
+            logger.error("JWT认证异常: {}", e.getMessage(), e);
             SecurityContextHolder.clearContext();
         }
 
+        // 继续过滤链
         filterChain.doFilter(request, response);
     }
 
     /**
-     * 判断是否为管理员用户
+     * 指定哪些路径跳过JWT过滤器
+     */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getRequestURI();
+
+        // 跳过认证相关接口
+        if (isAuthPath(path)) {
+            logger.debug("⏭️ 跳过认证路径: {}", path);
+            return true;
+        }
+
+        // 跳过Swagger相关接口
+        if (isSwaggerPath(path)) {
+            logger.debug("⏭️ 跳过Swagger路径: {}", path);
+            return true;
+        }
+
+        // 跳过静态资源和系统接口
+        if (isPublicPath(path)) {
+            logger.debug("⏭️ 跳过公共路径: {}", path);
+            return true;
+        }
+
+        logger.debug("🔍 需要JWT验证的路径: {}", path);
+        return false;
+    }
+
+    /**
+     * 认证相关路径判断
+     */
+    private boolean isAuthPath(String path) {
+        return path.equals("/lureclub/api/user/auth/login") ||
+                path.equals("/lureclub/api/user/auth/register") ||
+                path.equals("/lureclub/api/admin/auth/login") ||
+                path.equals("/lureclub/api/admin/auth/create");
+    }
+
+    /**
+     * Swagger相关路径判断
+     */
+    private boolean isSwaggerPath(String path) {
+        return path.startsWith("/swagger-ui") ||
+                path.startsWith("/v3/api-docs") ||
+                path.startsWith("/swagger-resources") ||
+                path.startsWith("/webjars") ||
+                path.startsWith("/api-docs") ||
+                path.equals("/swagger-ui.html") ||
+                path.equals("/v3/api-docs.yaml");
+    }
+
+    /**
+     * 公共路径判断
+     */
+    private boolean isPublicPath(String path) {
+        return path.startsWith("/uploads/") ||
+                path.startsWith("/static/") ||
+                path.equals("/favicon.ico") ||
+                path.equals("/error") ||
+                path.equals("/health") ||
+                path.startsWith("/actuator/");
+    }
+
+    /**
+     * 判断是否为管理员用户（负数ID）
      */
     private boolean isAdminUser(Long userId) {
         return userId != null && userId < 0;
     }
 
     /**
-     * 从请求头中获取Token
+     * 从请求中提取Token
      */
     private String getTokenFromRequest(HttpServletRequest request) {
+        // 1. 从Authorization头获取 Bearer Token
         String bearerToken = request.getHeader("Authorization");
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
         }
 
+        // 2. 从请求参数获取（兼容性支持）
         String paramToken = request.getParameter("token");
         if (StringUtils.hasText(paramToken)) {
-            logger.debug("从请求参数获取到token");
             return paramToken;
         }
 
         return null;
-    }
-
-    /**
-     * 优化性能，跳过不需要验证的路径
-     */
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        String path = request.getRequestURI();
-
-        // 新增Swagger相关路径检查
-        if (isSwaggerPath(path)) {
-            return true;
-        }
-
-        return isPublicPath(path) || isStaticResource(path);
-    }
-
-    /**
-     * 判断是否为Swagger相关路径
-     */
-    private boolean isSwaggerPath(String path) {
-        String[] swaggerPaths = {
-                "/swagger-ui/",
-                "/v3/api-docs/",
-                "/api-docs/",
-                "/swagger-resources/",
-                "/webjars/"
-        };
-
-        for (String swaggerPath : swaggerPaths) {
-            if (path.startsWith(swaggerPath)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * 判断是否为公开路径
-     */
-    private boolean isPublicPath(String path) {
-        String[] publicPaths = {
-                "/api/user/auth/login",
-                "/api/user/auth/register",
-                "/api/admin/auth/login",
-                "/api/admin/auth/create",
-                "/error",
-                "/health",
-                "/actuator/health"
-        };
-
-        for (String publicPath : publicPaths) {
-            if (path.equals(publicPath) || path.startsWith(publicPath + "/")) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * 判断是否为静态资源
-     */
-    private boolean isStaticResource(String path) {
-        String[] staticPaths = {
-                "/uploads/",
-                "/static/",
-                "/swagger-ui/",
-                "/v3/api-docs/",
-                "/favicon.ico"
-        };
-
-        for (String staticPath : staticPaths) {
-            if (path.startsWith(staticPath)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -227,3 +226,4 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return ROLE_USER.equals(getCurrentUserRole());
     }
 }
+
