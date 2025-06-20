@@ -36,13 +36,22 @@ public interface PointsHistoryRepository extends JpaRepository<PointsHistory, Lo
     @Query("SELECT COALESCE(SUM(ph.points), 0) FROM PointsHistory ph WHERE ph.userId = :userId AND ph.points > 0")
     Integer calculateTotalPoints(@Param("userId") Long userId);
 
+//    /**
+//     * 修复：新增计算用户有效积分的方法
+//     * 有效积分 = 历史获得积分总和 - 历史抵扣积分总和（截止到指定日期前）
+//     */
+//    @Query("SELECT COALESCE(" +
+//            "(SELECT SUM(ph1.points) FROM PointsHistory ph1 WHERE ph1.userId = :userId AND ph1.points > 0 AND ph1.operationDate < :beforeDate) - " +
+//            "(SELECT SUM(ABS(ph2.points)) FROM PointsHistory ph2 WHERE ph2.userId = :userId AND ph2.points < 0 AND ph2.operationDate < :beforeDate), 0)")
+//    Integer calculateEffectivePoints(@Param("userId") Long userId, @Param("beforeDate") LocalDate beforeDate);
+
     /**
-     * 修复：新增计算用户有效积分的方法
-     * 有效积分 = 历史获得积分总和 - 历史抵扣积分总和（截止到指定日期前）
+     * 修复：使用原生SQL计算用户有效积分
      */
-    @Query("SELECT COALESCE(" +
-            "(SELECT SUM(ph1.points) FROM PointsHistory ph1 WHERE ph1.userId = :userId AND ph1.points > 0 AND ph1.operationDate < :beforeDate) - " +
-            "(SELECT SUM(ABS(ph2.points)) FROM PointsHistory ph2 WHERE ph2.userId = :userId AND ph2.points < 0 AND ph2.operationDate < :beforeDate), 0)")
+    @Query(value = "SELECT COALESCE(" +
+            "(SELECT SUM(points) FROM points_history WHERE user_id = :userId AND points > 0 AND operation_date < :beforeDate) - " +
+            "(SELECT SUM(ABS(points)) FROM points_history WHERE user_id = :userId AND points < 0 AND operation_date < :beforeDate), 0)",
+            nativeQuery = true)
     Integer calculateEffectivePoints(@Param("userId") Long userId, @Param("beforeDate") LocalDate beforeDate);
 
     /**
