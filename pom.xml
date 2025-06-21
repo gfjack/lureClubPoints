@@ -11,7 +11,7 @@
     <groupId>com.lureclub</groupId>
     <artifactId>points</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <packaging>war</packaging>
+    <packaging>jar</packaging>
     <name>lure-club-points-system</name>
     <description>雷霆路亚俱乐部积分管理系统</description>
 

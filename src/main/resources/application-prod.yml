@@ -1,49 +1,57 @@
-# 生产环境配置
-server:
-  port: 8080
 
-spring:
-  # 数据库配置 - 生产环境
-  datasource:
-    url: jdbc:mysql://localhost:3306/lureclub_points?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai
-    username: ${DB_USERNAME:lureclub}
-    password: ${DB_PASSWORD:your_password}
-    hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
-      idle-timeout: 600000
-      max-lifetime: 1800000
 
-  # JPA配置 - 生产环境
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    show-sql: false
-    properties:
+  spring:
+    # 数据库配置 - 请替换为你的实际数据库信息
+    datasource:
+      url: jdbc:mysql://119.45.122.98:3306/lureclub_points?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      username: lure_admin
+      password: Gfj123456
+      hikari:
+        maximum-pool-size: 20
+        minimum-idle: 5
+        idle-timeout: 600000
+        max-lifetime: 1800000
+
+    # JPA配置 - 关键修复
+    jpa:
       hibernate:
-        format_sql: false
+        ddl-auto: validate
+      show-sql: true
+      properties:
+        hibernate:
+          dialect: org.hibernate.dialect.MySQL8Dialect
+          format_sql: true
+#          # 添加以下配置来处理类型映射
+#          type:
+#            preferred_boolean_jdbc_type: TINYINT
+#          jdbc:
+#            lob:
+#              non_contextual_creation: true
+#      database-platform: org.hibernate.dialect.MySQL8Dialect  # 额外保险
 
-  # SQL初始化配置
-  sql:
-    init:
-      mode: never
+  # 日志配置
+  logging:
+    level:
+      com.lureclub: INFO
+      root: INFO
+    file:
+      name: /var/log/lureclub/application.log
 
-# 日志配置 - 生产环境
-logging:
-  level:
-    com.lureclub: INFO
-    org.springframework.security: WARN
-  pattern:
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  # 文件上传路径 - 生产环境
   file:
-    name: /var/log/lureclub/application.log
+    upload:
+      path: /opt/tomcat/webapps/uploads/lureclub
+      prize-images: prizes
 
-# 文件上传路径 - 生产环境
-file:
-  upload:
-    path: /data/uploads/lureclub/
+  # JWT配置
+  jwt:
+    secret: lureclub2025secretkey_production_change_this_to_very_long_secure_key
+    expiration: 86400000
 
-# JWT配置 - 生产环境使用环境变量
-jwt:
-  secret: ${JWT_SECRET:your_super_secret_jwt_key_for_production}
-  expiration: 86400000
+  # 积分任务配置
+  points:
+    task:
+      enabled: true
+      cron: "0 0 1 * * ?"
+    check:
+      cron: "0 0 * * * ?"
